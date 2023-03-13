@@ -1,0 +1,161 @@
+import { Component, HostListener, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
+})
+export class AppComponent implements OnInit {
+  title = 'snake';
+  blockSize: number = 25;
+  rows: number = 20;
+  columns: number = 20;
+  board: any;
+  context: any;
+
+  snakeHeadX: number = this.blockSize * 5;
+  snakeHeadY: number = this.blockSize * 5;
+
+  snakeBody: number[][] = [];
+
+  speedX: number = 0;
+  speedY: number = 0;
+
+  foodX: number = this.blockSize * 5;
+  foodY: number = this.blockSize * 5;
+
+  gameOver: boolean = false;
+  justAteFood: boolean = false;
+
+  constructor() {}
+
+  ngOnInit(): void {
+    this.board = document.getElementById('board');
+    this.board.height = this.rows * this.blockSize;
+    this.board.width = this.columns * this.blockSize;
+    this.context = this.board.getContext('2d');
+
+    this.placeFood();
+
+    setInterval(() => this.update(this.context), 1000 / 5);
+  }
+
+  update(contexts: any) {
+    if (this.gameOver) {
+      return;
+    }
+    this.justAteFood = false;
+    contexts.clearRect(0, 0, this.board.width, this.board.height);
+    contexts.fillStyle = 'black';
+    contexts.fillRect(0, 0, this.board.width, this.board.height);
+
+    this.snakeHeadX += this.speedX * this.blockSize;
+    this.snakeHeadY += this.speedY * this.blockSize;
+
+    console.log('Help---' + this.snakeHeadX + ' ' + this.snakeHeadY);
+
+    contexts.fillStyle = 'red';
+    contexts.fillRect(this.foodX, this.foodY, this.blockSize, this.blockSize);
+
+    if (this.snakeHeadX == this.foodX && this.snakeHeadY == this.foodY) {
+      if (this.speedX == -1) {
+        this.snakeBody.push([this.foodX + this.blockSize, this.foodY]);
+      } else if (this.speedX == 1) {
+        this.snakeBody.push([this.foodX - this.blockSize, this.foodY]);
+      } else if (this.speedY == -1) {
+        this.snakeBody.push([this.foodX, this.foodY + this.blockSize]);
+      } else if (this.speedY == 1) {
+        this.snakeBody.push([this.foodX, this.foodY - this.blockSize]);
+      }
+      this.snakeBody.push([this.foodX, this.foodY]);
+      this.justAteFood = true;
+      this.placeFood();
+    }
+    for (let i = this.snakeBody.length; i > 0; i--) {
+      this.snakeBody[i] = this.snakeBody[i - 1];
+    }
+    if (this.snakeBody.length >= 1) {
+      this.snakeBody.pop();
+    }
+
+    if (this.snakeBody.length) {
+      this.snakeBody[0] = [this.snakeHeadX, this.snakeHeadY];
+    }
+
+    contexts.fillStyle = 'lime';
+    contexts.fillRect(
+      this.snakeHeadX,
+      this.snakeHeadY,
+      this.blockSize,
+      this.blockSize
+    );
+    for (let i = 0; i < this.snakeBody.length; i++) {
+      contexts.fillRect(
+        this.snakeBody[i][0],
+        this.snakeBody[i][1],
+        this.blockSize,
+        this.blockSize
+      );
+    }
+
+    if (
+      this.snakeHeadX < 0 ||
+      this.snakeHeadX > this.columns * this.blockSize - 1 ||
+      this.snakeHeadY < 0 ||
+      this.snakeHeadY > this.rows * this.blockSize
+    ) {
+      this.gameOver = true;
+      alert('Game Over');
+    }
+    for (let i = 1; i < this.snakeBody.length; i++) {
+      console.log(i);
+      console.log(this.snakeHeadX + ' ' + this.snakeHeadY);
+      console.log(this.snakeBody);
+      if (this.snakeHeadX == this.snakeBody[i][0]) {
+        console.log('TRUE');
+      }
+      if (this.snakeHeadY == this.snakeBody[i][1]) {
+        console.log('TRUE');
+      }
+      if (!this.justAteFood) {
+        console.log(!this.justAteFood);
+      }
+      if (
+        this.snakeHeadX == this.snakeBody[i][0] &&
+        this.snakeHeadY == this.snakeBody[i][1] &&
+        !this.justAteFood
+      ) {
+        this.gameOver = true;
+        alert('Game Over sad');
+      }
+    }
+  }
+
+  placeFood() {
+    this.foodX = Math.floor(Math.random() * this.columns) * this.blockSize;
+    this.foodY = Math.floor(Math.random() * this.rows) * this.blockSize;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeypress(e: KeyboardEvent) {
+    if (e.key == 'ArrowUp' && this.speedY != 1) {
+      this.speedX = 0;
+      this.speedY = -1;
+      this.update(this.context);
+    } else if (e.key == 'ArrowDown' && this.speedY != -1) {
+      this.speedX = 0;
+      this.speedY = 1;
+      this.update(this.context);
+    }
+    if (e.key == 'ArrowLeft' && this.speedX != 1) {
+      this.speedX = -1;
+      this.speedY = 0;
+      this.update(this.context);
+    }
+    if (e.key == 'ArrowRight' && this.speedX != -1) {
+      this.speedX = 1;
+      this.speedY = 0;
+      this.update(this.context);
+    }
+  }
+}
